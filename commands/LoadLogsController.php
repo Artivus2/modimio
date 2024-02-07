@@ -119,15 +119,19 @@ class NginxParse
     public function parse($line)
     {
         if (!preg_match($this->pcreFormat, $line, $matches)) {
-            throw new \Exception("Error parsing line, check offset and limits");
+            $matches = null;
+            //throw new \Exception("Error parsing line, check offset and limits");
         }
         $entry = new \stdClass();
+        if ($matches) {
         foreach (array_filter(array_keys($matches), 'is_string') as $key) {
             if ('time' === $key && true !== $stamp = strtotime($matches[$key])) {
                 $entry->stamp = $stamp;
             }
             $entry->{$key} = $matches[$key];
+            }
         }
+
         return $entry;
     }
 
@@ -188,13 +192,13 @@ class LoadlogsController extends Controller
         
         $result = $this->getzip();
         $array = $this->parselog($result);
-        foreach ($array as $entry) {
+        foreach ($array["data"] as $entry) {
             $logs = new Logs;
-            $logs->ip = $entry['host'];
-            $logs->date = $entry['stamp'];
-            $logs->url = $entry['HeaderReferer'];
-            $logs->useragent = $entry['HeaderUserAgent'];
-            $logs->save;
+            $logs->host = $entry;
+            $logs->date = $entry->stamp ?? time();
+            $logs->url = $entry->HeaderReferer ?? "-";
+            $logs->useragent = $entry->HeaderUserAgent ?? "-";
+            $logs->save();
         }
 
     }
@@ -260,8 +264,9 @@ class LoadlogsController extends Controller
             $handle = fopen($file, "r");
             $ic = 0;
             $ic_max = 10;  // stops after this number of rows
-            $ip_re = '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\z/';
-            $buffer = new NginxParse($file, '%h %l %u %t "%r" %>s %O "%{Referer}i" \"%{User-Agent}i"', 0, 10);
+
+            
+            $buffer = new NginxParse($file, '%h %l %u %t "%r" %>s %O "%{Referer}i" \"%{User-Agent}i"', 0, 20);
 
             // Get array of data & data count
             $array = $buffer->worker();

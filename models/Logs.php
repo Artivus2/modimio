@@ -7,7 +7,7 @@ use Yii;
 /**
  * This is the model class for table "logs".
  *
- * @property string $ip
+ * @property string $hoat
  * @property string $date
  * @property string $url
  * @property string $useragent
@@ -32,9 +32,9 @@ class Logs extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['ip', 'date', 'url', 'useragent'], 'required'],
+            [['host', 'date', 'url', 'useragent'], 'required'],
             [['date'], 'safe'],
-            [['ip', 'url', 'useragent', 'os', 'archi', 'browser'], 'string', 'max' => 255],
+            [['host', 'url', 'useragent', 'os', 'archi', 'browser'], 'string', 'max' => 255],
         ];
     }
 
@@ -44,7 +44,7 @@ class Logs extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
-            'ip' => 'IP адрес',
+            'host' => 'IP адрес',
             'date' => 'Дата',
             'url' => 'URL',
             'useragent' => 'Useragent',
