@@ -11,6 +11,7 @@ use yii;
 use yii\console\Controller;
 use yii\console\ExitCode;
 use app\models\Logs;
+use UAParser;
 
 
 
@@ -108,7 +109,7 @@ class NginxParse
     public function setFormat($format)
     {
         // strtr won't work for "complex" header patterns
-        // $this->pcreFormat = strtr("#^{$format}$#", $this->patterns);
+        $this->pcreFormat = strtr("#^{$format}$#", $this->patterns);
         $expr = "#^{$format}$#";
         foreach ($this->patterns as $pattern => $replace) {
             $expr = preg_replace("/{$pattern}/", $replace, $expr);
@@ -123,12 +124,27 @@ class NginxParse
             //throw new \Exception("Error parsing line, check offset and limits");
         }
         $entry = new \stdClass();
+        $x64=array('x86_64','x86-64','Win64','64;','amd64','AMD64','WOW64','x64_64','ia64','sparc64','ppc64','IRIX64');
+        $parseuseragent =  UAParser\Parser::create();
         if ($matches) {
         foreach (array_filter(array_keys($matches), 'is_string') as $key) {
             if ('time' === $key && true !== $stamp = strtotime($matches[$key])) {
                 $entry->stamp = $stamp;
             }
             $entry->{$key} = $matches[$key];
+            if ('HeaderUserAgent' === $key) {
+                
+                $result = $parseuseragent->parse($matches[9]);
+                $entry->browser = $result->ua->family ?? null;
+                $entry->os = $result->os->toString() ?? null;
+                $entry->archi = null;
+                foreach ($x64 as $string) {
+                    $entry->archi = strpos($matches[9], $string)?"x64":"x32";
+                }
+                
+                
+            }
+
             }
         }
 
@@ -160,16 +176,7 @@ class NginxParse
         $entry = [];
         foreach ($result as $line) {
             $entry[] = $this->parse($line);
-            // [host] => 217.118.64.117
-            //         [logname] => -
-            //         [user] => -
-            //         [stamp] => 1553138939
-            //         [time] => 21/Mar/2019:06:28:59 +0300
-            //         [request] => GET /assets/e7d282d/img/icon-basket.svg HTTP/1.1
-            //         [status] => 200
-            //         [sentBytes] => 1976
-            //         [HeaderReferer] => https://tanki.modimio.ru/
-            //         [HeaderUserAgent]
+
             
 
         }
@@ -193,11 +200,17 @@ class LoadlogsController extends Controller
         $result = $this->getzip();
         $array = $this->parselog($result);
         foreach ($array["data"] as $entry) {
+            //print_r($entry);
             $logs = new Logs;
-            $logs->host = $entry;
+            $logs->host = $entry->host ?? '0.0.0.0';
             $logs->date = $entry->stamp ?? time();
-            $logs->url = $entry->HeaderReferer ?? "-";
-            $logs->useragent = $entry->HeaderUserAgent ?? "-";
+            $logs->url = $entry->HeaderReferer ?? '-';
+            $logs->useragent = $entry->HeaderUserAgent ?? '-';
+            $logs->os = $entry->os ?? null;
+            $logs->browser = $entry->browser ?? null;
+            $logs->archi = $entry->archi ?? null;
+            
+
             $logs->save();
         }
 
@@ -266,20 +279,21 @@ class LoadlogsController extends Controller
             $ic_max = 10;  // stops after this number of rows
 
             
-            $buffer = new NginxParse($file, '%h %l %u %t "%r" %>s %O "%{Referer}i" \"%{User-Agent}i"', 0, 20);
-
+            $buffer = new NginxParse($file, '%h %l %u %t "%r" %>s %O "%{Referer}i" \"%{User-Agent}i"', 0, 125000);
+            
             // Get array of data & data count
             $array = $buffer->worker();
+            
 
             // Total lines in log file
-            echo '<h1>'.$array['totalLines'].'</h1>';
+            //echo '<h1>'.$array['totalLines'].'</h1>';
 
             // Dump data array
-            echo '<pre>';
-            print_r($array['data']);
-            echo '</pre>';
+            //echo '<pre>';
+            //print_r($array['data']);
+            //echo '</pre>';
         }
-            print_r($array);
+            //print_r($array);
         
         return $array;
         

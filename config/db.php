@@ -2,7 +2,7 @@
 
 return [
     'class' => 'yii\db\Connection',
-    'dsn' => 'mysql:host=localhost;dbname=modimio',
+    'dsn' => 'mysql:host=10.8.12.118;dbname=modimio',
     'username' => 'admin',
     'password' => 'Adm142!@',
     'charset' => 'utf8',
