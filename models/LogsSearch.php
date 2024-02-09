@@ -18,7 +18,7 @@ class LogsSearch extends Logs
     {
         return [
             [['id'], 'integer'],
-            [['ip', 'date', 'date2', 'url', 'useragent', 'os', 'archi', 'browser'], 'safe'],
+            [['ip', 'date', 'date_end', 'url', 'useragent', 'os', 'archi', 'browser'], 'safe'],
         ];
     }
 

@@ -11,6 +11,7 @@ use app\models\LoginForm;
 use app\models\ContactForm;
 use app\models\Logs;
 use app\models\LogsSearch;
+use yii\db\Query;
 
 class SiteController extends Controller
 {
@@ -65,55 +66,65 @@ class SiteController extends Controller
     {
         $searchModel = new LogsSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $countDates = [];
+        $countRequestPerDay = [];
+        $topUrlPerDay = [];
+        $topBrowserPerDay = [];
+        $graphXDates = [];
+        $graphYcountPerDat = [];
+        $graphXpercentOfCountTop3 = [];
+        $grafik1 = Logs::find()->select(["FROM_UNIXTIME(date,'%Y-%m-%d') as day, count(*) as total"])->groupBy(["day"])->asArray()->all();
+        $grafik2 = Logs::find()->select(["FROM_UNIXTIME(date,'%Y-%m-%d') as day, count(*) as total"])->groupBy(["day"])->asArray()->all();
 
-        $query = Logs::find();
-        $topBrowser=[];
-        $masTopBrowsers = $query->select("browser")
-            ->where($dataProvider->query->where)
-            ->groupBy("browser")
-            ->orderBy('count(1) desc')
-            ->limit(3)
-            ->asArray()
-            ->all();
-        foreach($masTopBrowsers as $TopBrowser){
-            $topBrowser[] = $TopBrowser['browser'];
-        }
+        // Выполняем запрос к базе данных
+        // $query = Logs::find();
+        // $topBrowser=[];
+        // $masTopBrowsers = $query->select("browser")
+        //     ->where($dataProvider->query->where)
+        //     ->groupBy("browser")
+        //     ->orderBy('count(1) desc')
+        //     ->limit(3)
+        //     ->asArray()
+        //     ->all();
+        // foreach($masTopBrowsers as $TopBrowser){
+        //     $topBrowser[] = $TopBrowser['browser'];
+        // }
 
-        $query = Logs::find();
-        $masDateTopBrowsers = $query->select(["DATE_FORMAT(date,'%y-%m-%d') date", "count(1) cnt"])
-            ->where(
-                [
-                    'browser'=>$topBrowser,
-                ]
-            )
-            ->where($dataProvider->query->where)
-            ->groupBy(["DATE_FORMAT(date,'%y-%m-%d')"])
-            ->asArray()
-            ->all();
+        // $query = Logs::find();
+        // $masDateTopBrowsers = $query->select(["DATE_FORMAT(date,'%y-%m-%d') date", "count(1) cnt"])
+        //     ->where(
+        //         [
+        //             'browser'=>$topBrowser,
+        //         ]
+        //     )
+        //     ->where($dataProvider->query->where)
+        //     ->groupBy(["DATE_FORMAT(date,'%y-%m-%d')"])
+        //     ->asArray()
+        //     ->all();
 
-        $query = Logs::find();
-        $subQueryBrowser = Logs::find();
-        $subQueryBrowser->select('browser')
-            ->where($dataProvider->query->where)
-            ->from('logs')
-            ->groupBy("browser")
-            ->orderBy('count(1) desc')
-            ->limit(1);
-        $subQueryurl = Logs::find();
-        $subQueryurl->select('url')
-            ->where($dataProvider->query->where)
-            ->from('logs')
-            ->groupBy("url")
-            ->orderBy('count(1) desc')
-            ->limit(1);
-        $masDate = $query->select(["DATE_FORMAT(date,'%y-%m-%d') date", "count(1) cnt",'browser'=>$subQueryBrowser,'url'=>$subQueryurl])
-            ->where($dataProvider->query->where)
-            ->groupBy(["DATE_FORMAT(date,'%y-%m-%d')"])
-            ->orderBy("date")
-            ->asArray()
-            ->all();
+        // $query = Logs::find();
+        // $subQueryBrowser = (new Query())
+        //     ->select('browser')
+        //     ->where($dataProvider->query->where)
+        //     ->from('logs')
+        //     ->groupBy("browser")
+        //     ->orderBy('count(1) desc')
+        //     ->limit(1);
+        // $subQueryurl = (new Query())
+        //     ->select('url')
+        //     ->where($dataProvider->query->where)
+        //     ->from('logs')
+        //     ->groupBy("url")
+        //     ->orderBy('count(1) desc')
+        //     ->limit(1);
+        // $masDate = $query->select(["DATE_FORMAT(date,'%y-%m-%d') date", "count(1) cnt",'browser'=>$subQueryBrowser,'url'=>$subQueryurl])
+        //     ->where($dataProvider->query->where)
+        //     ->groupBy(["DATE_FORMAT(date,'%y-%m-%d')"])
+        //     ->orderBy("date")
+        //     ->asArray()
+        //     ->all();
 
-        return $this->render('index',compact('masDateTopBrowsers','masDate','topBrowser','searchModel','dataProvider'));
+        return $this->render('index',compact('grafik1','grafik2','countRequestPerDay','topUrlPerDay','topBrowserPerDay','searchModel','dataProvider'));
     }
 
     /**
