@@ -227,7 +227,7 @@ class LoadlogsController extends Controller
         $file_lists = scandir($dir , SCANDIR_SORT_DESCENDING);
         $extzip = "zip";
         $extnew = "checked";
-        
+        ini_set('memory_limit', '-1');
         //print_r($file_lists);
         foreach ($file_lists as $file) {
             $ext = pathinfo($file, PATHINFO_EXTENSION);
