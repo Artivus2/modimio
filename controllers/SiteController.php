@@ -67,64 +67,94 @@ class SiteController extends Controller
         $searchModel = new LogsSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $countDates = [];
-        $countRequestPerDay = [];
-        $topUrlPerDay = [];
-        $topBrowserPerDay = [];
-        $graphXDates = [];
-        $graphYcountPerDat = [];
-        $graphXpercentOfCountTop3 = [];
-        $grafik1 = Logs::find()->select(["FROM_UNIXTIME(date,'%Y-%m-%d') as day, count(*) as total"])->groupBy(["day"])->asArray()->all();
-        $grafik2 = Logs::find()->select(["FROM_UNIXTIME(date,'%Y-%m-%d') as day, count(*) as total"])->groupBy(["day"])->asArray()->all();
+        $grafik1 = Logs::find()->select(["FROM_UNIXTIME(date,'%Y-%m-%d') as day, count(*) as total"])->groupBy(["day"])->asArray()->orderBy('day asc')->all();
+        
+        // доля от общего числа топ 3 бразура график
 
-        // Выполняем запрос к базе данных
-        // $query = Logs::find();
-        // $topBrowser=[];
-        // $masTopBrowsers = $query->select("browser")
-        //     ->where($dataProvider->query->where)
-        //     ->groupBy("browser")
-        //     ->orderBy('count(1) desc')
-        //     ->limit(3)
-        //     ->asArray()
-        //     ->all();
-        // foreach($masTopBrowsers as $TopBrowser){
-        //     $topBrowser[] = $TopBrowser['browser'];
-        // }
 
-        // $query = Logs::find();
-        // $masDateTopBrowsers = $query->select(["DATE_FORMAT(date,'%y-%m-%d') date", "count(1) cnt"])
-        //     ->where(
-        //         [
-        //             'browser'=>$topBrowser,
-        //         ]
-        //     )
-        //     ->where($dataProvider->query->where)
-        //     ->groupBy(["DATE_FORMAT(date,'%y-%m-%d')"])
-        //     ->asArray()
-        //     ->all();
 
-        // $query = Logs::find();
-        // $subQueryBrowser = (new Query())
-        //     ->select('browser')
-        //     ->where($dataProvider->query->where)
-        //     ->from('logs')
-        //     ->groupBy("browser")
-        //     ->orderBy('count(1) desc')
-        //     ->limit(1);
-        // $subQueryurl = (new Query())
-        //     ->select('url')
-        //     ->where($dataProvider->query->where)
-        //     ->from('logs')
-        //     ->groupBy("url")
-        //     ->orderBy('count(1) desc')
-        //     ->limit(1);
-        // $masDate = $query->select(["DATE_FORMAT(date,'%y-%m-%d') date", "count(1) cnt",'browser'=>$subQueryBrowser,'url'=>$subQueryurl])
-        //     ->where($dataProvider->query->where)
-        //     ->groupBy(["DATE_FORMAT(date,'%y-%m-%d')"])
-        //     ->orderBy("date")
-        //     ->asArray()
-        //     ->all();
+        // top 3 браузера
+        $query = Logs::find();
+        $topBrowser=[];
+        $TopBrowsers = $query->select("browser")
+            ->where($dataProvider->query->where)
+            ->groupBy("browser")
+            ->orderBy('count(1) desc')
+            ->limit(3)
+            ->asArray()
+            ->all();
 
-        return $this->render('index',compact('grafik1','grafik2','countRequestPerDay','topUrlPerDay','topBrowserPerDay','searchModel','dataProvider'));
+        $grafik2 = Logs::find()->select(["FROM_UNIXTIME(date,'%Y-%m-%d') as day, browser, count(*) as total"])
+        ->groupBy(["day","browser"])
+        ->asArray()
+        ->orderBy('day asc')
+        ->where(["browser" => $TopBrowsers])
+        ->all();
+
+
+        foreach($TopBrowsers as $TopBrowser){
+            $topBrowser[] = [
+                "browser" => $TopBrowser['browser'],
+                "data" => Logs::find()
+                ->select(["FROM_UNIXTIME(date,'%Y-%m-%d') as day, count(*) as total"])
+                ->groupBy(["day"])->asArray()
+                ->orderBy('day asc')
+                ->where(['browser'=>$TopBrowser])
+                ->asArray()
+                ->all()
+
+            ];
+            
+        }
+
+        // top 3  url
+        $query = Logs::find();
+            $topUrl=[];
+            $TopUrls = $query->select("url")
+                ->where($dataProvider->query->where)
+                ->groupBy("url")
+                ->orderBy('count(1) desc')
+                ->limit(3)
+                ->asArray()
+                ->all();
+        foreach($TopUrls as $TopUrl){
+            $topUrl[] = [
+                "url" => $TopUrl['url'],
+                "data" => Logs::find()
+                ->select(["FROM_UNIXTIME(date,'%Y-%m-%d') as day, count(*) as total"])
+                ->groupBy(["day"])->asArray()
+                ->orderBy('day asc')
+                ->where(['url'=>$TopUrl])
+                ->asArray()
+                ->all()
+
+            ];
+            
+        }
+        
+        $query = Logs::find();
+        $subQueryBrowser = (new Query())
+            ->select('browser')
+            ->where($dataProvider->query->where)
+            ->from('logs')
+            ->groupBy("browser")
+            ->orderBy('count(1) desc')
+            ->limit(1);
+        $subQueryurl = (new Query())
+            ->select('url')
+            ->where($dataProvider->query->where)
+            ->from('logs')
+            ->groupBy("url")
+            ->orderBy('count(1) desc')
+            ->limit(1);
+        $table = $query->select(["FROM_UNIXTIME(date,'%Y-%m-%d') as day", "count(1) cnt",'browser'=>$subQueryBrowser,'url'=>$subQueryurl])
+            ->where($dataProvider->query->where)
+            ->groupBy(["day"])
+            ->orderBy("day")
+            ->asArray()
+            ->all();
+
+        return $this->render('index',compact('grafik1','grafik2','topBrowser','topUrl','table'));
     }
 
     /**

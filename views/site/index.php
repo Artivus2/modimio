@@ -24,6 +24,8 @@ $this->params['breadcrumbs'][] = $this->title;
 
 $dataProvider1 = new \yii\data\ArrayDataProvider(['allModels' => $grafik1]);
 $dataProvider2 = new \yii\data\ArrayDataProvider(['allModels' => $grafik2]);
+$dataProvider3 = new \yii\data\ArrayDataProvider(['allModels' => $topUrl]);
+$dataProvider4 = new \yii\data\ArrayDataProvider(['allModels' => $table]);
 
 echo Highcharts::widget([
     'options' => [
@@ -35,11 +37,13 @@ echo Highcharts::widget([
           'title' => ['text' => 'Количество запросов']
        ],
        'series' => [
-          ['name' => 'Дата', 'data' => new SeriesDataHelper($dataProvider1, ['total'])],
+          ['name' => 'Кол-во', 'data' => new SeriesDataHelper($dataProvider1, ['total'])],
        ]
     ]
  ]);
 
+
+ var_dump($grafik2);
  echo Highcharts::widget([
     'scripts' => [
         'modules/exporting',
@@ -47,7 +51,7 @@ echo Highcharts::widget([
     ],
     'options' => [
         'title' => [
-            'text' => 'Combination chart',
+            'text' => 'График 2',
         ],
         'xAxis' => [
             'categories' => new SeriesDataHelper($dataProvider2, ['day'])
@@ -55,7 +59,7 @@ echo Highcharts::widget([
         'labels' => [
             'items' => [
                 [
-                    'html' => 'Total fruit consumption',
+                    'html' => 'Доля топ3 браузеров',
                     'style' => [
                         'left' => '50px',
                         'top' => '18px',
@@ -67,59 +71,56 @@ echo Highcharts::widget([
         'series' => [
             [
                 'type' => 'column',
-                'name' => 'Jane',
-                'data' => new SeriesDataHelper($dataProvider2, ['total']),
+                'name' => 'Top 3',
+                'data' => new SeriesDataHelper($dataProvider2, ['browser','total']),
             ],
-            [
-                'type' => 'column',
-                'name' => 'John',
-                'data' => new SeriesDataHelper($dataProvider2, ['total']),
-            ],
-            [
-                'type' => 'column',
-                'name' => 'Joe',
-                'data' => new SeriesDataHelper($dataProvider2, ['total']),
-            ],
+            // [
+            //     'type' => 'column',
+            //     'name' => 'Top 2',
+            //     'data' => new SeriesDataHelper($dataProvider2, ['browser','total']),
+            // ],
+            // [
+            //     'type' => 'column',
+            //     'name' => 'Top 3',
+            //     'data' => new SeriesDataHelper($dataProvider2, ['browser','total']),
+            // ],
             [
                 'type' => 'spline',
                 'name' => 'Average',
                 'data' => new SeriesDataHelper($dataProvider2, ['total']),
-                'marker' => [
-                    'lineWidth' => 2,
-                    'lineColor' => new JsExpression('Highcharts.getOptions().colors[3]'),
-                    'fillColor' => 'white',
-                ],
+                // 'marker' => [
+                //     'lineWidth' => 2,
+                //     'lineColor' => new JsExpression('Highcharts.getOptions().colors[3]'),
+                //     'fillColor' => 'white',
+                // ],
             ],
-            [
-                'type' => 'pie',
-                'name' => 'Total consumption',
-                'data' => [
-                    [
-                        'name' => 'Jane',
-                        'y' => 13,
-                        'color' => new JsExpression('Highcharts.getOptions().colors[0]'), // Jane's color
-                    ],
-                    [
-                        'name' => 'John',
-                        'y' => 23,
-                        'color' => new JsExpression('Highcharts.getOptions().colors[1]'), // John's color
-                    ],
-                    [
-                        'name' => 'Joe',
-                        'y' => 19,
-                        'color' => new JsExpression('Highcharts.getOptions().colors[2]'), // Joe's color
-                    ],
-                ],
-                'center' => [100, 80],
-                'size' => 100,
-                'showInLegend' => false,
-                'dataLabels' => [
-                    'enabled' => false,
-                ],
-            ],
+            
         ],
     ]
 ]);
-
-
 ?>
+<div>
+    <br>
+    <h3>Таблица</h3>
+    <?php
+    $dataProvider = new ArrayDataProvider([
+        'allModels' => $table,
+        'sort' => [
+            'attributes' => ['Дата', 'Число запросов', 'Самый популярный браузер','Самый популярный URL'],
+        ],
+        'pagination' => [
+            'pageSize' => 10,
+        ],
+    ]);
+    ?>
+    <?= GridView::widget([
+        'dataProvider' => $dataProvider,
+        'columns' => [
+            ['attribute'=>'Дата','value'=>'day'],
+            ['attribute'=>'Число запросов','value'=>'cnt'],
+            ['attribute'=>'Самый популярный браузер','value'=>'browser'],
+            ['attribute'=>'Самый популярный URL','value'=>'url'],
+        ],
+    ]); ?>
+</div>
+

@@ -270,6 +270,7 @@ class LoadlogsController extends Controller
     protected function parselog($result = null){
         //print_r($result);
         $data = array();
+        ini_set('memory_limit','-1');
         foreach ($result as $file) {
             echo 'INFO: Парсинг файла: '.$file.", размер: ".filesize($file)." байт.... \n";
             //$this->stdout('INFO: Парсинг файла: '.$file.", размер: ".filesize($file)." байт.... \n", Console::BOLD);
